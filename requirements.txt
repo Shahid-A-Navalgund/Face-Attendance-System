@@ -1,0 +1,40 @@
+# Cloud-Based Attendance System - Requirements
+# Install with: pip install -r requirements.txt
+
+# Image Processing & Computer Vision
+opencv-python==4.8.0.76
+opencv-contrib-python==4.8.0.76
+
+# Cloud Database
+firebase-admin==6.2.0
+
+# Data Processing & Analysis
+pandas==2.0.3
+numpy==1.24.3
+
+# Image Processing
+Pillow==10.0.0
+
+# Timezone Support
+pytz==2023.3
+
+# Tkinter comes with Python by default
+
+# ============================================
+# NOTE FOR INSTALLATION:
+# ============================================
+# 1. Create virtual environment first:
+#    python -m venv venv
+#
+# 2. Activate it:
+#    # Windows:
+#    venv\Scripts\activate
+#    # Mac/Linux:
+#    source venv/bin/activate
+#
+# 3. Install requirements:
+#    pip install -r requirements.txt
+#
+# 4. On some systems, opencv-contrib might need
+#    manual installation. If you get errors:
+#    pip install opencv-contrib-python --upgrade
