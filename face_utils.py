@@ -17,6 +17,8 @@ import certifi
 import cv2
 import numpy as np
 
+import config  # noqa: F401 - also switches to the project folder
+
 MODELS_DIR = 'models'
 _ZOO = 'https://github.com/opencv/opencv_zoo/raw/main/models/'
 DETECTOR_MODEL = ('face_detection_yunet_2023mar.onnx', _ZOO + 'face_detection_yunet/')
@@ -114,7 +116,6 @@ def _builtin_camera_index():
 def open_camera():
     """Open the built-in camera (or config.CAMERA_INDEX if set)."""
     global _camera_index
-    import config
     if _camera_index is None:
         _camera_index = getattr(config, 'CAMERA_INDEX', None)
         if _camera_index is None:

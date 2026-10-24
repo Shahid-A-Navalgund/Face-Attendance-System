@@ -1,3 +1,9 @@
+import os
+
+# All paths (serviceAccountKey.json, dataset/, models/, trained_model/) are relative to the
+# project folder, so work from there even when a script is started from another folder
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 # Firebase settings - replace with your project's values
 FIREBASE_DATABASE_URL = "https://attendance-system-40483-default-rtdb.asia-southeast1.firebasedatabase.app/"
 SERVICE_ACCOUNT_KEY = "serviceAccountKey.json"
