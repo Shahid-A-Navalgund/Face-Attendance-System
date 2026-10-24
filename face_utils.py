@@ -8,9 +8,12 @@ Both ship with OpenCV; only the model files are downloaded on first use.
 
 import json
 import os
+import shutil
+import ssl
 import subprocess
 import sys
 import urllib.request
+import certifi
 import cv2
 import numpy as np
 
@@ -30,7 +33,10 @@ def _model_file(name, base_url):
     if not os.path.exists(path):
         os.makedirs(MODELS_DIR, exist_ok=True)
         print(f"⬇️  Downloading {name} (one time only)...")
-        urllib.request.urlretrieve(base_url + name, path + '.part')
+        # certifi's CA bundle: python.org builds on macOS ship without trusted certificates
+        ctx = ssl.create_default_context(cafile=certifi.where())
+        with urllib.request.urlopen(base_url + name, context=ctx) as resp, open(path + '.part', 'wb') as f:
+            shutil.copyfileobj(resp, f)
         os.replace(path + '.part', path)
     return path
 
