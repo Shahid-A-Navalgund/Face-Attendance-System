@@ -2,21 +2,22 @@
 # Install with: pip install -r requirements.txt
 
 # Image Processing & Computer Vision
-opencv-python==4.8.0.76
-opencv-contrib-python==4.8.0.76
+# contrib only: installing opencv-python alongside it breaks cv2.face
+opencv-contrib-python>=4.10,<5
 
 # Cloud Database
-firebase-admin==6.2.0
+firebase-admin>=6.2
 
 # Data Processing & Analysis
-pandas==2.0.3
-numpy==1.24.3
+pandas>=2.2
+openpyxl  # Excel export
+numpy>=1.26
 
 # Image Processing
-Pillow==10.0.0
+Pillow>=10.0
 
 # Timezone Support
-pytz==2023.3
+pytz>=2023.3
 
 # Tkinter comes with Python by default
 

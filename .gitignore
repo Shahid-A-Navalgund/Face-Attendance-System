@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+serviceAccountKey.json
+dataset/
+trained_model/
+models/

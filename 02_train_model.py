@@ -1,20 +1,17 @@
 """
 MODULE 2: FACE RECOGNITION TRAINING
-Train LBPH (Local Binary Patterns Histograms) recognizer
+Compute an SFace embedding for every registered photo
 """
 
 import cv2
 import os
 import numpy as np
+import face_utils
 
 class FaceTrainer:
     def __init__(self):
         """Initialize face trainer"""
-        # Create LBPH recognizer
-        self.recognizer = cv2.face.LBPHFaceRecognizer_create()
-        self.face_cascade = cv2.CascadeClassifier(
-            cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
-        )
+        self.engine = face_utils.FaceEngine()
         self.current_id = 0
         self.student_labels = {}
     
@@ -55,6 +52,7 @@ class FaceTrainer:
             if len(parts) >= 2:
                 student_id = parts[1]
                 student_name = '_'.join(parts[2:]) if len(parts) > 2 else "Unknown"
+                student_id, student_name = face_utils.normalize(student_id, student_name)
             else:
                 student_id = "Unknown"
                 student_name = student_dir
@@ -79,10 +77,9 @@ class FaceTrainer:
                     # Read image in grayscale
                     img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
                     
-                    if img is not None:
-                        # Resize to standard size
-                        img = cv2.resize(img, (200, 200))
-                        faces.append(img)
+                    vec = self.engine.embed_photo(img) if img is not None else None
+                    if vec is not None:
+                        faces.append(vec)
                         labels.append(self.current_id)
                         image_count += 1
                         
@@ -90,11 +87,12 @@ class FaceTrainer:
                     print(f"   ⚠️  Error reading {image_name}: {e}")
             
             if image_count > 0:
-                print(f"   ✅ Loaded {image_count} images")
+                print(f"   ✅ Loaded {image_count}/{len(image_files)} images (no face found in the rest)"
+                  if image_count < len(image_files) else f"   ✅ Loaded {image_count} images")
+                self.current_id += 1
             else:
-                print(f"   ⚠️  No valid images found in folder")
-            
-            self.current_id += 1
+                print(f"   ⚠️  No valid images found in folder - skipped")
+                del self.student_labels[self.current_id]
         
         # Print summary
         print(f"\n{'='*60}")
@@ -104,16 +102,12 @@ class FaceTrainer:
         print(f"Total images: {len(faces)}")
         print(f"Unique labels: {len(set(labels))}")
         
-        if len(faces) < 10:
-            print(f"\n⚠️  WARNING: Only {len(faces)} images found!")
-            print(f"   Recommend at least 30 images per student for good accuracy")
-        
         return faces, labels
     
     def train_recognizer(self, dataset_path='dataset', 
-                        output_path='trained_model/face_recognizer.yml'):
+                        output_path=face_utils.MODEL_PATH):
         """
-        Train the LBPH face recognizer
+        Build the face embeddings the attendance system matches against
         
         Args:
             dataset_path: Path to dataset folder
@@ -135,23 +129,16 @@ class FaceTrainer:
             print("📌 Please register students first using 01_face_registration.py")
             return False
         
-        # Convert lists to numpy arrays
-        faces = np.array(faces)
+        faces = np.array(faces, dtype=np.float32)
         labels = np.array(labels)
         
-        print(f"\n🔄 Training in progress...")
-        print(f"📊 Training data: {len(faces)} images from {len(set(labels))} students")
-        
         try:
-            # Train the recognizer
-            print("   ⏳ This may take a minute...")
-            self.recognizer.train(faces, labels)
-            
-            # Create output directory if it doesn't exist
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
             
-            # Save the trained model
-            self.recognizer.write(output_path)
+            # Save the embeddings plus the label -> student mapping they belong to,
+            # so attendance never has to guess the mapping from the dataset folder
+            np.savez(output_path, embeddings=faces, labels=labels)
+            face_utils.save_labels(self.student_labels)
             
             print(f"\n✅ TRAINING COMPLETED!")
             print(f"{'='*60}")
@@ -186,7 +173,7 @@ def main():
     # Train the model
     success = trainer.train_recognizer(
         dataset_path='dataset',
-        output_path='trained_model/face_recognizer.yml'
+        output_path=face_utils.MODEL_PATH
     )
     
     if success:
