@@ -11,6 +11,7 @@ Templates (ISO FMR, base64) are stored next to the student's face photos and nev
 
 import json
 import os
+import ssl
 import urllib.error
 import urllib.request
 
@@ -27,22 +28,40 @@ def enabled():
     return getattr(config, 'FINGERPRINT_ENABLED', False)
 
 
-def _url(method):
-    return getattr(config, 'FINGERPRINT_URL', 'http://localhost:8004/mfs100/') + method
+# Depending on its version, the Mantra service listens on plain HTTP 8004 and/or HTTPS 8003
+# (with a self-signed certificate). 'auto' tries both and remembers the one that answers.
+_CANDIDATES = ['http://localhost:8004/mfs100/', 'https://localhost:8003/mfs100/']
+_working_url = None
+# The service only runs on this PC (localhost) and signs its own certificate, so don't verify it
+_LOCAL_TLS = ssl._create_unverified_context()
+
+
+def _base_urls():
+    configured = getattr(config, 'FINGERPRINT_URL', 'auto')
+    if _working_url:
+        return [_working_url]
+    return _CANDIDATES if configured == 'auto' else [configured]
 
 
 def _call(method, payload=None, timeout=5):
     """GET (no payload) or POST JSON to the Mantra service; returns its JSON reply."""
+    global _working_url
     data = None if payload is None else json.dumps(payload).encode()
-    req = urllib.request.Request(_url(method), data=data,
-                                 headers={'Content-Type': 'application/json; charset=utf-8'})
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            reply = json.loads(resp.read().decode() or '{}')
-    except (urllib.error.URLError, OSError, ValueError) as e:
+    error = None
+    for base in _base_urls():
+        req = urllib.request.Request(base + method, data=data,
+                                     headers={'Content-Type': 'application/json; charset=utf-8'})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout, context=_LOCAL_TLS) as resp:
+                reply = json.loads(resp.read().decode() or '{}')
+            _working_url = base
+            break
+        except (urllib.error.URLError, OSError, ValueError) as e:
+            error = e
+    else:
         raise FingerprintError(
             "Fingerprint service not reachable. Is the MFS100 plugged in and "
-            f"'MFS100 Client Service' running? ({e})")
+            f"'MFS100 Client Service' running? ({error})")
     if str(reply.get('ErrorCode', '0')) != '0':
         raise FingerprintError(reply.get('ErrorDescription') or f"Scanner error {reply.get('ErrorCode')}")
     return reply

@@ -14,6 +14,6 @@ CAMERA_INDEX = None
 # True = registration takes a fingerprint and attendance needs face AND fingerprint.
 # Set False to run face-only (e.g. on a Mac).
 FINGERPRINT_ENABLED = False
-FINGERPRINT_URL = "http://localhost:8004/mfs100/"
+FINGERPRINT_URL = "auto"          # or e.g. "https://localhost:8003/mfs100/"
 FINGERPRINT_QUALITY = 60          # minimum scan quality (0-100)
 FINGERPRINT_TIMEOUT_MS = 10000    # how long to wait for a finger
